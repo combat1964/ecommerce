@@ -94,6 +94,9 @@ class Models_Mapper_ProductMapper extends Application_Model_Mappers_Abstract {
 		}
 
 		if (!is_null($model->getTags())) {
+			//process filter attributes
+			$this->processAttributesForProduct($model);
+
 			$productTagsTable = new Models_DbTable_ProductTag();
 			$productTagsTable->getAdapter()->beginTransaction();
 			$productTagsTable->delete($productTagsTable->getAdapter()->quoteInto('product_id = ?', $model->getId()));
@@ -122,6 +125,52 @@ class Models_Mapper_ProductMapper extends Application_Model_Mappers_Abstract {
 		$model->notifyObservers();
 
 		return $model;
+	}
+
+	/**
+	 * @param Models_Model_Product $model
+	 * @throws Zend_Db_Adapter_Exception
+	 */
+	public function processAttributesForProduct(Models_Model_Product $model){
+		$filterAttributesEavDbTable = new Filtering_DbTables_Eav();
+		$filterAttributesDbTable = new Filtering_DbTables_Attributes();
+		$where = $filterAttributesEavDbTable->getAdapter()->quoteInto('product_id = ?', $model->getId());
+		$attributes = $filterAttributesEavDbTable->fetchAll($where)->toArray();
+		if(!empty($attributes)){
+			foreach ($attributes as $attribute) {
+				$where = $filterAttributesDbTable->getAdapter()->quoteInto('attribute_id = ?', $attribute['attribute_id']);
+				$select = $filterAttributesDbTable->getAdapter()->select()->from(
+					'shopping_filtering_tags_has_attributes'
+				)->where($where);
+
+				$existingTags = $filterAttributesDbTable->getAdapter()->fetchAssoc($select);
+				$searchArray = $existingTags;
+
+				foreach ($model->getTags() as $tag) {
+					if (!isset($existingTags[$tag['id']])) {
+						$data = array(
+							'tag_id' => $tag['id'],
+							'attribute_id' => $attribute['attribute_id']
+						);
+						$filterAttributesDbTable->getAdapter()->insert(
+							'shopping_filtering_tags_has_attributes',
+							$data
+						);
+					}else{
+						unset($searchArray[$tag['id']]);
+					}
+				}
+				//remove not used tags
+				if(!empty($searchArray)){
+					$filterhasAttributeDbtable = new Filtering_DbTables_ShoppingFilteringTagsHasAttributes();
+					foreach ($searchArray as $array){
+						$where = $filterhasAttributeDbtable->getAdapter()->quoteInto('tag_id = ?', $array['tag_id']);
+						$where .= " AND " . $filterhasAttributeDbtable->getAdapter()->quoteInto('attribute_id = ?', $array['attribute_id']);
+						$filterhasAttributeDbtable->delete($where);
+					}
+				}
+			}
+		}
 	}
 
 	public function updatePageIdForProduct($model){
