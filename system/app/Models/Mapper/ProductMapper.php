@@ -144,7 +144,6 @@ class Models_Mapper_ProductMapper extends Application_Model_Mappers_Abstract {
 				)->where($where);
 
 				$existingTags = $filterAttributesDbTable->getAdapter()->fetchAssoc($select);
-				$searchArray = $existingTags;
 
 				foreach ($model->getTags() as $tag) {
 					if (!isset($existingTags[$tag['id']])) {
@@ -156,17 +155,6 @@ class Models_Mapper_ProductMapper extends Application_Model_Mappers_Abstract {
 							'shopping_filtering_tags_has_attributes',
 							$data
 						);
-					}else{
-						unset($searchArray[$tag['id']]);
-					}
-				}
-				//remove not used tags
-				if(!empty($searchArray)){
-					$filterhasAttributeDbtable = new Filtering_DbTables_ShoppingFilteringTagsHasAttributes();
-					foreach ($searchArray as $array){
-						$where = $filterhasAttributeDbtable->getAdapter()->quoteInto('tag_id = ?', $array['tag_id']);
-						$where .= " AND " . $filterhasAttributeDbtable->getAdapter()->quoteInto('attribute_id = ?', $array['attribute_id']);
-						$filterhasAttributeDbtable->delete($where);
 					}
 				}
 			}
