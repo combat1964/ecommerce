@@ -12,10 +12,26 @@ class Api_Filtering_Eav extends Api_Service_Abstract
      */
     private $_eavMapper;
 
+    /**
+     * Translator
+     *
+     * @var Zend_Translate
+     */
+    protected $_translator = null;
+
+    /**
+     * Toaster response helper
+     *
+     * @var Helpers_Action_Response
+     */
+    protected $_responseHelper = null;
+
     public function init()
     {
         parent::init();
         $this->_eavMapper = Filtering_Mappers_Eav::getInstance();
+        $this->_translator = Zend_Registry::get('Zend_Translate');
+        $this->_responseHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('response');
     }
 
     /**
@@ -86,7 +102,14 @@ class Api_Filtering_Eav extends Api_Service_Abstract
      */
     public function deleteAction()
     {
-        // TODO: Implement deleteAction() method.
+        $data = json_decode($this->_request->getRawBody(), true);
+        if (empty($data['attributeId']) && empty($data['productId'])) {
+            $this->_error();
+        }
+        $dbTable = new Zend_Db_Table('shopping_filtering_values');
+        $dbTable->delete(array('attribute_id = ?' => $data['attributeId'], 'product_id = ?' => $data['productId']));
+
+        return $this->_responseHelper->success(array('message'=>$this->_translator->translate('This attribute is deleted')));
     }
 
     private function _assignFilterToTags($eavContainer, $tags)

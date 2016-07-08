@@ -128,13 +128,13 @@ if (_.isUndefined(TFilter)) {
                 tags = attr.tags;
             }
 
-            return $('<p>', {'class': 'filtering-attribute-widget'})
-                .append($('<label>').html(attr.label))
+            return $('<p>', {'class': 'filtering-attribute-widget', 'data-attributeId': attr.attribute_id, 'data-attributeValue': attr.value, 'data-productId': attr.product_id})
+                .append($('<label>').html(attr.label+' ').append($('<span>', {'class': 'ticon-remove-sign', 'style': 'color:#FF6347;'})))
                 .append(
-                    $('<input>', {type: 'text', name: attr.name, value: _.unescape(attr.value)})
-                        .data({aid: attr.attribute_id, tags: tags})
-                )
-                .appendTo(this.list);
+                        $('<input>', {type: 'text', name: attr.name, value: _.unescape(attr.value)})
+                            .data({aid: attr.attribute_id, tags: tags})
+                    )
+                    .appendTo(this.list);
         },
         saveAttributeValue: function (e) {
             var $input = $(e.currentTarget),

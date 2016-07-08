@@ -60,4 +60,26 @@
         app.loadAttributes(<?php echo json_encode($this->currentFilters); ?>);
         <?php endif; ?>
     });
+
+    $(document).on("click", ".ticon-remove-sign", function () {
+        var selfdeleted = this,
+            $deleted = $(selfdeleted).closest('.filtering-attribute-widget'),
+            $deletedData = {
+                attributeId: $deleted.data('attributeid'),
+                productId: $deleted.data('productid')
+            };
+        showConfirm('<?php echo $this->translate("You are about to remove the attribute for this product! Are you sure?"); ?>',
+            function () {
+                $.ajax({
+                    url: '<?php echo $this->websiteUrl?>api/filtering/eav/',
+                    dataType: 'json',
+                    data: JSON.stringify($deletedData),
+                    type: 'DELETE'
+                }).done(function (response) {
+                    showMessage(response.responseText.message, false, 3000);
+                    $deleted = $(selfdeleted).closest('.filtering-attribute-widget');
+                    $deleted.hide();
+                });
+            });
+    });
 </script>
