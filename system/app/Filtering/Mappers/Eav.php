@@ -127,7 +127,7 @@ class Filtering_Mappers_Eav
      * @param array $tags    List of tags
      * @return array
      */
-    public function findListFiltersByTags($tags)
+    public function findListFiltersByTags($tags, $widgetSettings = array())
     {
         if (!is_array($tags)) {
             $tags = (array)$tags;
@@ -164,6 +164,8 @@ class Filtering_Mappers_Eav
                 $data = $dbAdapter->fetchAll($select);
             }
             if (!empty($data)) {
+                $sessionHelper = Zend_Controller_Action_HelperBroker::getStaticHelper('Session');
+                $role          = $sessionHelper->getCurrentUser()->getRoleId();
                 foreach ($data as $item) {
                     $id = $item['attribute_id'];
                     if (!array_key_exists($id, $filters)) {
@@ -174,7 +176,13 @@ class Filtering_Mappers_Eav
                             'label'        => $item['label']
                         );
                     }
-                    $filters[$id]['values'][$item['value']] = $item['count'];
+                    if($role == Tools_Security_Acl::ROLE_SUPERADMIN || $role == Tools_Security_Acl::ROLE_ADMIN){
+                        $filters[$id]['values'][$item['value']] = $item['count'];
+                    }else{
+                        if(array_key_exists($item['value'],$widgetSettings[$filters[$id]['name']]) && !empty($widgetSettings)){
+                            $filters[$id]['values'][$item['value']] = $item['count'];
+                        }
+                    }
                 }
             }
         }
@@ -186,7 +194,7 @@ class Filtering_Mappers_Eav
      * @param array $tags    List of tags
      * @return array
      */
-    public function findRangeFiltersByTags($tags)
+    public function findRangeFiltersByTags($tags, $widgetSettings = array())
     {
         if (!is_array($tags)) {
             $tags = (array)$tags;
